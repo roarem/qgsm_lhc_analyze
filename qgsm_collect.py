@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 
 class QGSM_Distributions:
@@ -6,24 +7,31 @@ class QGSM_Distributions:
 
     print("Reading files...")
     eventNr, nrParticles  = np.loadtxt("data/B_MULT",dtype=int,usecols=(0,2),unpack=True)
-    NPOMS, NPOMH          = np.loadtxt("data/NPOM.dat",unpack=True)
+    NPOM                  = np.loadtxt("data/NPOM.dat",dtype=int)
     finalpr               = open("data/finalpr.data",'r').readlines()
-    print("Done reading files...")
 
-    self.eventNr, self.nrParticles, self.NPOMS, self.NPOMH, self.finalpr =\
-        eventNr, nrParticles, NPOMS, NPOMH, finalpr
+    self.eventNr, self.nrParticles, self.finalpr, self.NPOM =\
+        eventNr, nrParticles, finalpr, NPOM
+
+  def closeFile(self):
+    self.finalpr.close()
 
   def collectData(self):
 
-    eventNr, nrParticles, NPOMS, NPOMH, finalpr =\
-        self.eventNr, self.nrParticles, self.NPOMS, self.NPOMH, self.finalpr
+    eventNr, nrParticles, finalpr, NPOM =\
+        self.eventNr, self.nrParticles, self.finalpr, self.NPOM
 
+    total           = len(eventNr)
+    tol             = 10e-9
     inElasticEvents = 0
     elasticEvents   = 0
     startParticle   = 0
     endParticle     = 0
 
     ALL = []
+    eventNr = eventNr[::]
+    nrParticles = nrParticles[::]
+    print("Collecting data...")
     for event,nrParts in zip(eventNr,nrParticles):
 
       if nrParts == 2:
@@ -42,32 +50,38 @@ class QGSM_Distributions:
           C   = parton[13]
 
           if C != 0:
+            p = np.sqrt(px**2 + py**2 + pz**2) 
             pTransverse = np.sqrt(px**2 + py**2)
-
-            if (E-pz)==0:
-              rapidity = 10
-            elif (E+pz)==0:
-              rapidity = 0
+            rapidity = 0.5*np.log((E+pz)/(E-pz))
+            if abs(p-pz)<tol:
+              eta = 20
+            elif abs(p+pz)<tol:
+              eta = 0
             else:
-              rapidity = 0.5*np.log((E+pz)/(E-pz))
+              eta = 0.5*np.log((p+pz)/(p-pz))
             
-            ALL.append([C,pTransverse,1/pTransverse,rapidity])
+            NPOMS = NPOM[event-1,0]
+            NPOMH = NPOM[event-1,1]
+
+
+            ALL.append([event,C,p,pTransverse,rapidity,eta,NPOMS,NPOMH])
+            
       startParticle += nrParts
 
-      if event%1000==0:
-        print(event)
+      if event%(total//100)==0:
+        self.msg("%i"%(event/total*100)+'%')
      
     self.ALL = ALL
+    print("")
    
-    #self.charged          = charged
-    #self.pT               = pT
-    #self.pTWeight         = pTWeight
-    #self.rapidity         = rapidity
-    #self.inElasticEvents  = inElasticEvents
-    #self.elasticEvents    = elasticEvents
+  def msg(self,text):
+    text = text+chr(13)
+    sys.stdout.write(text)
+    sys.stdout.flush()
 
   def writeAnalysis(self):
-    fmts = ['%i','%i','%.7e','%.7e','%.7e']
+    print("Writing data...")
+    fmts = ['%i','%i','%.7e','%.7e','%.7e','%.7e','%i','%i']
     np.savetxt('data/collected.out',self.ALL,fmt=fmts,delimiter=' , ') 
     
 
