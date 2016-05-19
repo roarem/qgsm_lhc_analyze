@@ -11,7 +11,7 @@ int main()
   //test.EtaMax();
   test.NPOM_count();
   test.nfMax();
-  test.NFNB(30);
+  test.NFNB(50);
   //test.NPOMS_NPOMH(5,5,20);
   //test.NFNB(100);
 

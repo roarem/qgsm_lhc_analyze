@@ -8,8 +8,10 @@ Histogram::Histogram(std::string metafilepath, std::string filepath){
 
 void Histogram::ReadIn()
 {
+  int     i = 0;
   int     lineCount,Nevents,event,C,NPOMS,NPOMH;
   double  p,pT,rap,eta;
+
   std::string line;
   std::ifstream meta(my_metafilepath.c_str());
   std::getline(meta,line);
@@ -17,6 +19,7 @@ void Histogram::ReadIn()
   ss >> lineCount >> Nevents;
   my_lineCount = lineCount;
   my_Nevents   = Nevents;
+
   Eigen::VectorXi events(lineCount);
   Eigen::VectorXi Cs    (lineCount);
   Eigen::VectorXi NPOMSs(lineCount);
@@ -26,7 +29,7 @@ void Histogram::ReadIn()
   Eigen::VectorXd raps  (lineCount);
   Eigen::VectorXd etas  (lineCount);
   std::ifstream f(my_filepath.c_str());
-  int i = 0;
+
   while (std::getline(f, line)){
     std::istringstream ss(line);
     ss >> event >> C >> p >> pT >> rap >> eta >> NPOMS >> NPOMH;
@@ -146,32 +149,50 @@ void Histogram::NFNB (int Nbins)
   Eigen::VectorXd nf_bin(Nbins);
   Eigen::VectorXd nfnb_bin(Nbins);
   Eigen::VectorXd bins(Nbins);
-  nf_bin.setZero();
-  nfnb_bin.setZero();
-  bins.setZero();
   const int Nevents = my_NPOM.rows();
-  double bin_step = (double)my_maxNF/(double)Nbins;
+  const double bin_step = (double)my_maxNF/(double)Nbins;
   cout << my_maxNF << "/"<<Nbins << " = " <<bin_step << endl;
   double bin_i = 0;
-  for (int i=0 ; i<Nbins ; i++){ 
-    for (int j=0 ; j<Nevents ;j++){
-      if (my_NPOM(j,0) > bin_i and my_NPOM(j,0) < bin_i+bin_step){
-        if (my_NPOM(j,3)==1 and my_NPOM(j,2)==1){
-          nf_bin(i) += my_NPOM(j,0);
-          nfnb_bin(i) += my_NPOM(j,0)*my_NPOM(j,1);
+  std::string path = "../../counted/";
+  for (int S=0 ; S<9 ; S++){
+    nf_bin.setZero();
+    nfnb_bin.setZero();
+    bins.setZero();
+    for (int H=0 ; H<9 ; H++){
+      bin_i = 0;
+      for (int i=0 ; i<Nbins ; i++){ 
+        for (int j=0 ; j<Nevents ;j++){
+          if (my_NPOM(j,0) > bin_i and my_NPOM(j,0) < bin_i+bin_step){
+            if (my_NPOM(j,2)==S and my_NPOM(j,3)==H){
+              nf_bin(i) += my_NPOM(j,0);
+              nfnb_bin(i) += my_NPOM(j,0)*my_NPOM(j,1);
+            }
+          }
         }
+        if(nf_bin(i)== 0)
+          bins(i) = 0;
+        else
+          bins(i) = nfnb_bin(i)/nf_bin(i);
+        bin_i += bin_step;
       }
+      cout << bins << endl;
+      std::string name1 = path+"S"+std::to_string(S)
+                              +"/H"+std::to_string(H)+"dnf.out";
+      std::string name2 = path+"S"+std::to_string(S)
+                              +"/H"+std::to_string(H)+"nbdnf.out";
+      std::string name3 = path+"S"+std::to_string(S)
+                              +"/H"+std::to_string(H)+"nbdnf_dnf.out";
+      WriteVec(name1,nf_bin);
+      WriteVec(name2,nfnb_bin);
+      WriteVec(name3,bins);
     }
-    bins(i) = nfnb_bin(i)/nf_bin(i);
-    bin_i += bin_step;
   }
-  cout << nf_bin << endl;
-  std::string name1 = "../../counted/dnf.out";
-  std::string name2 = "../../counted/nbdnf.out";
-  std::string name3 = "../../counted/nbdnf_dnf.out";
-  WriteVec(name1,nf_bin);
-  WriteVec(name2,nfnb_bin);
-  WriteVec(name3,bins);
+  //std::string name1 = "../../counted/dnf.out";
+  //std::string name2 = "../../counted/nbdnf.out";
+  //std::string name3 = "../../counted/nbdnf_dnf.out";
+  //WriteVec(name1,nf_bin);
+  //WriteVec(name2,nfnb_bin);
+  //WriteVec(name3,bins);
 }
 void Histogram::WriteVec(std::string filename, Eigen::VectorXd& bins)
 {
