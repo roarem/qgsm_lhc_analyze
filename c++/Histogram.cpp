@@ -156,7 +156,7 @@ void Histogram::NFNB (int Nbins)
   cout << my_maxNF << "/"<<Nbins << " = " <<bin_step << endl;
   double bin_i = 0;
   std::string path = "../../counted/";
-  for (int S=0 ; S<9 ; S++){
+  for (int S=1 ; S<3 ; S++){
     nf_bin.setZero();
     nbdnf_bin.setZero();
     for (int H=0 ; H<9 ; H++){
@@ -195,7 +195,7 @@ void Histogram::NFNB (int Nbins)
     bins.setZero();
     for(int i=0 ; i<Nbins ; i++)
       bins(i) = nbdnf_bin(i)/nf_bin(i);
-    std::string name4 = path+"S"+std::to_string(S)+"tot_sum.out";
+    std::string name4 = path+"S"+std::to_string(S)+"/tot_sum.out";
     WriteVec(name4,bins); 
   }
 }

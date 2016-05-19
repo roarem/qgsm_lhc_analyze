@@ -9,7 +9,7 @@ class QGSM_Distributions:
     path = "../data/rawData/"+str(13000)+"/data/"
     eventNr, nrParticles  = np.loadtxt(path+"B_MULT",dtype=int,usecols=(0,2),unpack=True)
     NPOM                  = np.loadtxt(path+"NPOM.dat",dtype=int)
-    finalpr               = open(path+"finalpr.data",'r').readlines()
+    finalpr               = open(path+"finalpr.data",'r')
     
     self.path = path
     self.eventNr, self.nrParticles, self.finalpr, self.NPOM =\
@@ -39,10 +39,14 @@ class QGSM_Distributions:
 
       if nrParts == 2:
         inElasticEvents += 1
+        finalpr.readline()
+        finalpr.readline()
       else:
         elasticEvents += 1
 
-        for parton in finalpr[startParticle : startParticle+nrParts]:
+        for count in range(nrParts):
+          parton = finalpr.readline()
+          #[startParticle : startParticle+nrParts]:
 
           parton = list(map(float,parton.strip().split()))
 
@@ -55,7 +59,13 @@ class QGSM_Distributions:
           if C != 0:
             p = np.sqrt(px**2 + py**2 + pz**2) 
             pTransverse = np.sqrt(px**2 + py**2)
-            rapidity = 0.5*np.log((E+pz)/(E-pz))
+            if abs(E-pz)<tol:
+              rapidity = 20
+            elif abs(E+pz)<tol:
+              rapidity = 0
+            else:
+              rapidity = 0.5*np.log((E+pz)/(E-pz))
+
             if abs(p-pz)<tol:
               eta = 20
             elif abs(p+pz)<tol:
@@ -70,7 +80,7 @@ class QGSM_Distributions:
             self.lineCount += 1
             ALL.append([event,C,p,pTransverse,rapidity,eta,NPOMS,NPOMH])
             
-      startParticle += nrParts
+      #startParticle += nrParts
       self.countedEvents = elasticEvents
 
       if event%(total//100)==0:
