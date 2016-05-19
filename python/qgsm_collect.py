@@ -6,10 +6,12 @@ class QGSM_Distributions:
   def __init__(self):
 
     print("Reading files...")
-    eventNr, nrParticles  = np.loadtxt("../data/B_MULT",dtype=int,usecols=(0,2),unpack=True)
-    NPOM                  = np.loadtxt("../data/NPOM.dat",dtype=int)
-    finalpr               = open("../data/finalpr.data",'r').readlines()
+    path = "../data/rawData/"+str(13000)+"/data/"
+    eventNr, nrParticles  = np.loadtxt(path+"B_MULT",dtype=int,usecols=(0,2),unpack=True)
+    NPOM                  = np.loadtxt(path+"NPOM.dat",dtype=int)
+    finalpr               = open(path+"finalpr.data",'r').readlines()
     
+    self.path = path
     self.eventNr, self.nrParticles, self.finalpr, self.NPOM =\
         eventNr, nrParticles, finalpr, NPOM
 
