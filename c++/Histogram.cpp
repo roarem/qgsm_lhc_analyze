@@ -112,6 +112,8 @@ void Histogram::NPOM_count()
       NPOM(i,1) += 1;
   }
   my_NPOM = NPOM;
+  std::string name = "NPOM.out";
+  WriteMat(name, NPOM);
 }
 
 void Histogram::NPOMS_NPOMH (int NPS_max, int NPH_max, int Nbins)
@@ -151,15 +153,16 @@ void Histogram::NFNB (int Nbins)
   Eigen::VectorXd nbdnfH_bin(Nbins);
   Eigen::VectorXd nbdnf_bin(Nbins);
   Eigen::VectorXd bins(Nbins);
+  Eigen::VectorXd bin_edges(Nbins);
   const int Nevents = my_NPOM.rows();
   const double bin_step = (double)my_maxNF/(double)Nbins;
   cout << my_maxNF << "/"<<Nbins << " = " <<bin_step << endl;
   double bin_i = 0;
   std::string path = "../../counted/";
-  for (int S=1 ; S<3 ; S++){
+  for (int S=0 ; S<9 ; S++){
     nf_bin.setZero();
     nbdnf_bin.setZero();
-    for (int H=0 ; H<9 ; H++){
+    for (int H=0 ; H<9 ; H+=2){
       bin_i = 0;
       nbdnfH_bin.setZero();
       nfH_bin.setZero();
@@ -175,13 +178,13 @@ void Histogram::NFNB (int Nbins)
             }
           }
         }
+        bin_edges(i) = bin_i+bin_step/2;
         bin_i += bin_step;
         if(nfH_bin(i)== 0)
           bins(i) = 0;
         else
           bins(i) = nbdnfH_bin(i)/nfH_bin(i);
       }
-      cout << bins << endl;
       //std::string name1 = path+"S"+std::to_string(S)
       //                        +"/H"+std::to_string(H)+"dnf.out";
       //std::string name2 = path+"S"+std::to_string(S)
@@ -197,6 +200,8 @@ void Histogram::NFNB (int Nbins)
       bins(i) = nbdnf_bin(i)/nf_bin(i);
     std::string name4 = path+"S"+std::to_string(S)+"/tot_sum.out";
     WriteVec(name4,bins); 
+    std::string name5 = path+"S"+std::to_string(S)+"/bin_edges.out";
+    WriteVec(name5,bin_edges);
   }
 }
 

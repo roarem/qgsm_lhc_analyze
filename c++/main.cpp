@@ -10,8 +10,8 @@ int main()
   //test.Rapidity(100);
   //test.EtaMax();
   test.NPOM_count();
-  test.nfMax();
-  test.NFNB(50);
+  //test.nfMax();
+  //test.NFNB(80);
   //test.NPOMS_NPOMH(5,5,20);
   //test.NFNB(100);
 

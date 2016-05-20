@@ -6,7 +6,7 @@ def histogram(data,bins=100,range=None,weights=None):
   bin_centers = 0.5*(bin_edges[1:]+bin_edges[:-1])
   return n, bin_centers
 
-NPOM = '2'
+NPOM = '4'
 filepath = '../counted/S'+NPOM+'/'
 fontsize = '25'
 '''
@@ -48,11 +48,13 @@ fig.suptitle('NPOMS = '+NPOM,fontsize=fontsize)
 ax.set_xlabel('$n_F$',fontsize=fontsize)
 ax.set_ylabel('$<n_B(n_F)>$',fontsize=fontsize,rotation=90)
 ax.yaxis.labelpad = 0
-for H in range(5):
+Hrange = [0,2,4,6,8]
+bin_centers = np.loadtxt(filepath+'bin_edges.out')
+for H in Hrange:
   nbdn_nf = np.loadtxt(filepath+'H'+str(H)+'nbdnf_dnf.out')
-  ax.plot(nbdn_nf,label='H='+str(H))
+  ax.plot(bin_centers,nbdn_nf,linewidth=2.0,label='H='+str(H))
 tot = np.loadtxt(filepath+'tot_sum.out')
-ax.plot(tot,label='tot sum',marker='o',color='black')
+ax.plot(bin_centers,tot,linestyle='dashed',label='tot sum',marker='o',color='black')
 plt.legend()
 plt.show()
 
