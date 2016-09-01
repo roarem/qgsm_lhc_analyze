@@ -10,15 +10,17 @@ class FB:
         self.linecount, self.Nevents= np.loadtxt('../data/meta.out',dtype=np.int32)
         self.event, self.pT, self.eta = \
                 np.loadtxt("../data/collected.out",unpack=True,usecols=[0,3,5])#,dtype=np.int32)
+        print(len(self.event), len(self.pT), len(self.eta))
         print("Arrays put in memory")
 
     def b_corr_collect_mem(self,ALL,linecount,Nevents):
         self.event      = ALL[:,0]
-        self.pT         = ALL[:,1]
-        self.eta        = ALL[:,2]
+        self.pT         = ALL[:,3]
+        self.eta        = ALL[:,5]
         self.linecount  = linecount
         self.Nevents    = Nevents
-        print(len(self.event), len(self.pT), len(self.eta))
+        print(ALL.shape)
+        print(self.event.shape, self.pT.shape, self.eta[0:3])
 
     def b_corr_count(self):
         print("Starting counting ...")
@@ -43,12 +45,10 @@ class FB:
                         nB   += nb
                         nF   += nf
                         nb = nf = 0
-
                     if (self.eta[line] >= eta_lower_lim and self.eta[line] <= eta_upper_lim):
                         nf += 1
                     elif (self.eta[line] >= -eta_upper_lim and self.eta[line] <= -eta_lower_lim):
                         nb += 1
-
                 nBnF += nb*nf
                 nFnF += nf*nf
                 nB   += nb
