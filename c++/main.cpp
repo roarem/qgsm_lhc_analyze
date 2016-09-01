@@ -9,11 +9,11 @@ int main()
   Histogram test(metafilepath, filepath);
   //test.Rapidity(100);
   //test.EtaMax();
-  test.NPOM_count();
+  //test.NPOM_count();
   //test.nfMax();
   //test.NFNB(80);
   //test.NPOMS_NPOMH(5,5,20);
   //test.NFNB(100);
-
+  test.b_correlation();
   return 0;
 }

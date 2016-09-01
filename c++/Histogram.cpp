@@ -116,6 +116,70 @@ void Histogram::NPOM_count()
   WriteMat(name, NPOM);
 }
 
+void Histogram::b_correlation()
+{
+  Eigen::VectorXd b_corr(13);
+  Eigen::Vector4i ngaps (7,3,2,1);
+  Eigen::Vector4d delta_eta_gap (0.1,0.2,0.2,0.0);
+  double nEv = my_Nevents;
+  int gapN = 0;
+  int bcorr_counter = 0;
+  for (int measure=2 ; measure<9 ; measure+=2){
+
+    double eta_lower_lim = 0;
+    double eta_upper_lim = (double)measure/10;
+    cout << eta_upper_lim << endl; 
+    for (int i=0 ; i<ngaps(gapN) ; i++){
+      int old_event = 0;
+      double nF   = 0;
+      double nB   = 0;
+      double nBnF = 0; 
+      double nFnF = 0;
+      double nb   = 0;
+      double nf   = 0;
+
+      for (int j=0 ; j<my_lineCount ; j++){
+        if (my_pTs[j] > 0.3 and my_pTs[j] < 1.5){
+          if (old_event != my_events(j)){
+            old_event = my_events(j);
+            nBnF += nb*nf;
+            nFnF += nf*nf;
+            nB   += nb;
+            nF   += nf;
+            nf = nb = 0;
+          }
+          if (my_etas[j] > eta_lower_lim and my_etas[j] < eta_upper_lim)
+            nf   +=1;
+          else if(my_etas[j] > -eta_upper_lim and my_etas[j] < -eta_lower_lim)
+            nb   +=1;
+        }
+      }
+
+      nBnF += nb*nf;
+      nFnF += nf*nf;
+      nB   += nb;
+      nF   += nf;
+
+      b_corr(bcorr_counter) = (nBnF - (nB*nF)/nEv) / (nFnF - (nF*nF)/nEv);
+
+      //cout << "nBnf: " << nBnF << ", nFnF: " << nFnF << ", nB: " << nB << ", nF: " << nF <<endl;
+      cout << "eta_gap: " << eta_lower_lim << " - " << eta_upper_lim << endl;
+      cout << "("<<nBnF/nEv <<" - "<<nB*nF/(nEv*nEv)<<")/("<<nFnF/nEv<<" - "<<nF*nF/(nEv*nEv)<<")"<<" = ";
+      cout << b_corr(bcorr_counter)<<endl<<endl;
+
+      eta_lower_lim += delta_eta_gap(gapN);
+      eta_upper_lim += delta_eta_gap(gapN);
+      bcorr_counter += 1; 
+    }
+    gapN += 1;
+  }
+  std::string name = "b_corr.out";
+  WriteVec(name,b_corr);
+}
+
+
+
+
 void Histogram::NPOMS_NPOMH (int NPS_max, int NPH_max, int Nbins)
 {
   my_maxEta = 15;

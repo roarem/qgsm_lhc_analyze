@@ -3,10 +3,10 @@ import numpy as np
 
 class QGSM_Distributions:
 
-  def __init__(self):
+  def __init__(self,energy):
 
     print("Reading files...")
-    path = "../data/rawData/"+str(13000)+"/data/"
+    path = "../data/rawData/"+str(energy)+"/data/"
     eventNr, nrParticles  = np.loadtxt(path+"B_MULT",dtype=int,usecols=(0,2),unpack=True)
     NPOM                  = np.loadtxt(path+"NPOM.dat",dtype=int)
     finalpr               = open(path+"finalpr.data",'r')
@@ -38,11 +38,11 @@ class QGSM_Distributions:
     for event,nrParts in zip(eventNr,nrParticles):
 
       if nrParts == 2:
-        inElasticEvents += 1
+        elasticEvents += 1
         finalpr.readline()
         finalpr.readline()
       else:
-        elasticEvents += 1
+        inElasticEvents += 1
 
         for count in range(nrParts):
           parton = finalpr.readline()
@@ -59,29 +59,31 @@ class QGSM_Distributions:
           if C != 0:
             p = np.sqrt(px**2 + py**2 + pz**2) 
             pTransverse = np.sqrt(px**2 + py**2)
-            if abs(E-pz)<tol:
-              rapidity = 20
-            elif abs(E+pz)<tol:
-              rapidity = 0
-            else:
-              rapidity = 0.5*np.log((E+pz)/(E-pz))
+            if pTransverse > 0.3 and pTransverse < 1.5:
+              if abs(E-pz)<tol:
+                rapidity = 20
+              elif abs(E+pz)<tol:
+                rapidity = 0
+              else:
+                rapidity = 0.5*np.log((E+pz)/(E-pz))
 
-            if abs(p-pz)<tol:
-              eta = 20
-            elif abs(p+pz)<tol:
-              eta = 0
-            else:
-              eta = 0.5*np.log((p+pz)/(p-pz))
-            
-            NPOMS = NPOM[event-1,0]
-            NPOMH = NPOM[event-1,1]
+              if abs(p-pz)<tol:
+                eta = 20
+              elif abs(p+pz)<tol:
+                eta = 0
+              else:
+                eta = 0.5*np.log((p+pz)/(p-pz))
+
+              if np.abs(eta) < 1:
+                NPOMS = NPOM[event-1,0]
+                NPOMH = NPOM[event-1,1]
 
 
-            self.lineCount += 1
-            ALL.append([event,C,p,pTransverse,rapidity,eta,NPOMS,NPOMH])
+                self.lineCount += 1
+                ALL.append([event,C,p,pTransverse,rapidity,eta,NPOMS,NPOMH])
             
       #startParticle += nrParts
-      self.countedEvents = elasticEvents
+      self.countedEvents = inElasticEvents
 
       if event%(total//100)==0:
         self.msg("%i"%(event/total*100)+'%')
@@ -104,8 +106,8 @@ class QGSM_Distributions:
     
 
 if __name__=="__main__":
-
-  test = QGSM_Distributions()
+  energy = 7000
+  test = QGSM_Distributions(energy)
   test.collectData()
   test.writeAnalysis()
 
