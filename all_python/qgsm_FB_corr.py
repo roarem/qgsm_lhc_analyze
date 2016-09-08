@@ -1,3 +1,5 @@
+from __future__ import print_function
+import ROOT
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -9,25 +11,118 @@ class FB:
         print("Reading from meta.out and collected.out ...")
         self.linecount, self.Nevents= np.loadtxt('../data/meta.out',dtype=np.int32)
         self.event, self.pT, self.eta = \
-                np.loadtxt("../data/collected.out",unpack=True,usecols=[0,3,5])#,dtype=np.int32)
-        print(len(self.event), len(self.pT), len(self.eta))
+                np.loadtxt("../data/collected.out",unpack=True,usecols=[0,3,5])
         print("Arrays put in memory")
 
-    def b_corr_collect_mem(self,ALL,linecount,Nevents):
-        self.event      = ALL[:,0]
-        self.pT         = ALL[:,3]
-        self.eta        = ALL[:,5]
-        self.linecount  = linecount
-        self.Nevents    = Nevents
-        print(ALL.shape)
-        print(self.event.shape, self.pT.shape, self.eta[0:3])
+    def b_corr_collect_mem(self):
+        self.event      = bcorr[:,0]
+        self.eta        = bcorr[:,2]
+        self.linecount  = bcorr_linecount
+        self.Nevents    = bcorr_countedEvents
+    
+    def nB_nF_collect_mem(self,all_linecount,nsd_linecount,etalim_linecount,ptcut_linecount,\
+                               all_Nevents,nsd_Nevents,etalim_Nevents,ptcut_Nevents,\
+                               all_list,nsd_list,etalim_list,ptcut_list):
+        self.nbnf_all_linecount     = all_linecount
+        self.nbnf_nsd_linecount     = nsd_linecount
+        self.nbnf_etalim_linecount  = etalim_linecount
+        self.nbnf_ptcut_linecount   = ptcut_linecount
+        self.nbnf_all_Nevents       = all_Nevents
+        self.nbnf_nsd_Nevents       = nsd_Nevents
+        self.nbnf_etalim_Nevents    = etalim_Nevents
+        self.nbnf_ptcut_Nevents     = ptcut_Nevents 
+        self.nbnf_all_event         = all_list[:,0] 
+        self.nbnf_nsd_event         = nsd_list[:,0] 
+        self.nbnf_etalim_event      = etalim_list[:,0]    
+        self.nbnf_ptcut_event       = ptcut_list[:,0]    
+        self.nbnf_all_eta           = all_list[:,1]     
+        self.nbnf_nsd_eta           = nsd_list[:,1]     
+        self.nbnf_etalim_eta        = etalim_list[:,1]     
+        self.nbnf_ptcut_eta         = ptcut_list[:,1]   
 
-    def b_corr_count(self):
+        Nbins = 50
+        start = 0
+        stop  = 50
+        c1 = ROOT.TCanvas( 'c1', 'Example with Formula', 200, 10, 700, 500 )
+
+        print("Starting histogram for all")
+        H_all_in = ROOT.TH1F("all","ALL",Nbins,start,stop) 
+        H_all = self.nB_nF(self.nbnf_all_linecount,self.nbnf_all_Nevents,\
+                           self.nbnf_all_event,self.nbnf_all_eta,H_all_in)
+        H_all.SetMarkerStyle(20)
+        H_all.SetMarkerColor(4)
+        H_all.Draw("e1")
+
+        print("Starting histogram for nsd")
+        H_nsd_in = ROOT.TH1F("nsd","ALL",Nbins,start,stop)
+        H_nsd = self.nB_nF(self.nbnf_nsd_linecount,self.nbnf_nsd_Nevents,\
+                           self.nbnf_nsd_event,self.nbnf_nsd_eta,H_nsd_in)
+        H_nsd.SetMarkerStyle(21)
+        H_nsd.SetMarkerColor(3)
+        H_nsd.Draw("same e1")
+
+        print("Starting histogram for etalim")
+        H_etalim_in = ROOT.TH1F("etalim","ALL",Nbins,start,stop)
+        H_etalim = self.nB_nF(self.nbnf_etalim_linecount,self.nbnf_etalim_Nevents,\
+                                self.nbnf_etalim_event,self.nbnf_etalim_eta,H_etalim_in)
+        H_etalim.SetMarkerStyle(29)
+        H_etalim.SetMarkerColor(5)
+        H_etalim.Draw("same e1")
+
+        print("Starting histogram for cuts")
+        H_cuts_in = ROOT.TH1F("cuts","ALL",Nbins,start,stop) 
+        H_cuts = self.nB_nF(self.nbnf_ptcut_linecount,self.nbnf_ptcut_Nevents,\
+                            self.nbnf_ptcut_event,self.nbnf_ptcut_eta,H_cuts_in)
+        H_cuts.SetMarkerStyle(33)
+        H_cuts.SetMarkerColor(2)
+        H_cuts.Draw("same e1")
+
+        leg = ROOT.TLegend(0.8,0.8,0.9,0.9)
+        leg.SetFillColor(0)
+        leg.AddEntry(H_all,"all", "p")
+        leg.AddEntry(H_nsd,"nsd","p")
+        leg.AddEntry(H_etalim,"$|\eta|<1$","p")
+        leg.AddEntry(H_cuts,"0.3<p_{T}<1.5","p")
+        leg.Draw()
+        c1.Update()
+        raw_input()
+
+    def nB_nF(self,linecount,Nevents,event,eta,H):
+        old_event = event[0]
+        Nbins = 50
+        start = 0
+        stop  = 50
+        nb = nf = 0 
+        #c1 = ROOT.TCanvas( 'c1', 'Example with Formula', 200, 10, 700, 500 )
+        #H = ROOT.TH1F("nbdnf", "ALL", Nbins,start,stop)
+        Hnf = ROOT.TH1F("dnf", "dnf dist",Nbins,start,stop)
+        
+        for line in range(linecount):
+            if(old_event != event[line]):
+                old_event = event[line]
+                H.Fill(nb,nf)
+                Hnf.Fill(nf)
+                nb = nf = 0 
+            
+            #if np.abs(self.eta[line]) > 0.2 and np.abs(self.eta[line]) < 0.8: 
+            if eta[line] < 0:
+                nb += 1
+            else:
+                nf += 1
+
+        H.Divide(Hnf)
+        return H
+        
+    def b_corr_count(self,Nevents,bcorr,linecount):
         print("Starting counting ...")
+        event = bcorr[:,0]
+        eta   = bcorr[:,1]
+        Nevents = float(Nevents)
         self.b_corr = [] 
         Ngaps  = [7,3,2,1]
         delta_eta_gap = [0.1,0.2,0.2,0.0]
         i = 0 
+        print("number of events {}".format(Nevents))
         for delta_eta,measure in zip(delta_eta_gap,[0.2,0.4,0.6,0.8]):
             eta_lower_lim = 0
             eta_upper_lim = measure
@@ -36,28 +131,29 @@ class FB:
                 nF = nB = nBnF = nFnF = nb = nf = 0
                 old_event = 1
 
-                for line in range(self.linecount):
-                    #if (self.pT[line] > 0.3 and self.pT[line] < 1.5):
-                    if(old_event != self.event[line]):
-                        old_event = self.event[line]
+                for line in range(linecount):
+                    if(old_event != event[line]):
+                        old_event = event[line]
                         nBnF += nb*nf
                         nFnF += nf*nf
                         nB   += nb
                         nF   += nf
                         nb = nf = 0
-                    if (self.eta[line] >= eta_lower_lim and self.eta[line] <= eta_upper_lim):
+                    if (eta[line] >= eta_lower_lim and eta[line] <= eta_upper_lim):
                         nf += 1
-                    elif (self.eta[line] >= -eta_upper_lim and self.eta[line] <= -eta_lower_lim):
+                    elif (eta[line] >= -eta_upper_lim and eta[line] <= -eta_lower_lim):
                         nb += 1
                 nBnF += nb*nf
                 nFnF += nf*nf
                 nB   += nb
                 nF   += nf
 
-                b_corr_numb = (nBnF - nB*nF/self.Nevents)/(nFnF - nF*nF/self.Nevents)
+                b_corr_numb = (nBnF - nB*nF/Nevents)/(nFnF - nF*nF/Nevents)
                 self.b_corr.append(b_corr_numb)
                 print("----------")
                 print(eta_lower_lim," - ", eta_upper_lim)
+                print("nB: {}, nF: {}, nFnF: {}, nBnF: {},".format(nB,nF,nFnF,nBnF))
+                #print(eta_lower_lim," - ", eta_upper_lim)
                 print(b_corr_numb)
                 print("----------")
 
@@ -69,7 +165,10 @@ class FB:
         print("Saving results to file b_corr.py.out ...")
         np.savetxt('b_corr.py.out',self.b_corr)
 
-    def b_corr_plot(self):
+    def b_corr_plot(self,from_file=False):
+
+        if from_file:
+          self.b_corr = np.loadtxt("b_corr.py.out")
     
         fig, ax = plt.subplots()
         if self.energy==900:
