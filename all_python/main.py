@@ -4,7 +4,8 @@ import qgsm_FB_corr as fb_corr
 energy = 900
 O = collect.QGSM_Distributions(energy)
 O.collectData(bcorr=False,nbnf=True)
-O.create_hists()
+O.store_bin_data()
+O.create_nbnf_hists()
 #O.writeAnalysis()
 
 #FBs = fb_corr.FB(energy)
