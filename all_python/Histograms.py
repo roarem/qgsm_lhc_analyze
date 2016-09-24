@@ -16,6 +16,7 @@ class Histograms:
         for hist in hists_input:
             self.histograms.append(ROOT.TH1F(hist[0],hist[1],Nbins,start,stop)
 
+        self.NHistograms = len(self.histograms)
         self.Tree = ROOT.TTree(tree_name[0],tree_name[1])
 
         for hist,names in zip(self.histograms,hists_input):
@@ -27,10 +28,10 @@ class Histograms:
 
     def fillHistograms(self,nbnf=None,weighted=True):
         if weighted: 
-            for i,histo in enumerate(self.histograms):
-                histo.Fill(nbnf[i,1],nbnf[i,0])
+            for i in range(self.NHistograms):
+                self.histograms[i].Fill(nbnf[i,1],nbnf[i,0])
         else:
-            for i,histo in enumerate(self.histograms):
-                histo.Fill(nbnf[i,0])
+            for i in range(self.NHistograms):
+                self.histograms[i].Fill(nbnf[i,0])
 
         self.Tree.Fill()

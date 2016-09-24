@@ -22,10 +22,6 @@ class QGSM_Distributions:
     self.countedEvents      = 0
     self.bcorr_linecount    = 0
 
-    self.nbnf_all           = np.zeros(2)
-    self.nbnf_nsd           = np.zeros(2)
-    self.nbnf_etalim        = np.zeros(2)
-    self.nbnf_ptcut         = np.zeros(2)
 
     self.Nbins = 50
     start = -0.5
@@ -83,6 +79,10 @@ class QGSM_Distributions:
     self.finalpr.close()
 
   def collectData(self,bcorr=False,nbnf=False):
+    nbnf_all           = np.zeros(2)
+    nbnf_nsd           = np.zeros(2)
+    nbnf_etalim        = np.zeros(2)
+    nbnf_ptcut         = np.zeros(2)
     bcorr_counted              = 0
     nbnf_all_counted           = 0
     nbnf_nsd_counted           = 0
@@ -190,15 +190,19 @@ class QGSM_Distributions:
 
       
       if nfnb_countFlag:
-        self.fill_H()
+        weighted = [True, True, False]
+        nbnf = np.asarray([nbnf_all,nbnf_nsd,nbnf_etalim,nbnf_ptcut])
+        for i in range(len(self.trees)):
+            self.trees[i].fillHistograms(nbnf,weighted)
+
       self.nf_all            += self.nbnf_all[0]
       self.nf_nsd            += self.nbnf_nsd[0]
       self.nf_etalim         += self.nbnf_etalim[0]
       self.nf_ptcut          += self.nbnf_ptcut[0]
-      self.nbnf_all           = np.zeros(2)
-      self.nbnf_nsd           = np.zeros(2)
-      self.nbnf_etalim        = np.zeros(2)
-      self.nbnf_ptcut         = np.zeros(2)
+      nbnf_all           = np.zeros(2)
+      nbnf_nsd           = np.zeros(2)
+      nbnf_etalim        = np.zeros(2)
+      nbnf_ptcut         = np.zeros(2)
 
       self.bcorr_Nevents        += bcorr_counted
       self.nbnf_all_Nevents     += nbnf_all_counted
@@ -224,23 +228,6 @@ class QGSM_Distributions:
     
       print("all: {}, nsd: {}, etalim: {}, ptcut: {}"\
       .format(self.nbnf_all_Nevents,self.nbnf_nsd_Nevents,self.nbnf_etalim_Nevents,self.nbnf_ptcut_Nevents))
-
-
-  def fill_H(self):
-    self.H_all.Fill(self.nbnf_all[1],self.nbnf_all[0])
-    self.H_nsd.Fill(self.nbnf_nsd[1],self.nbnf_nsd[0]) 
-    self.H_etalim.Fill(self.nbnf_etalim[1],self.nbnf_etalim[0]) 
-    self.H_ptcut.Fill(self.nbnf_ptcut[1],self.nbnf_ptcut[0]) 
-    self.H_all_div.Fill(self.nbnf_all[1],self.nbnf_all[0])
-    self.H_nsd_div.Fill(self.nbnf_all[1],self.nbnf_all[0])
-    self.H_etalim_div.Fill(self.nbnf_all[1],self.nbnf_all[0])
-    self.H_ptcut_div.Fill(self.nbnf_all[1],self.nbnf_all[0])
-    self.H_all_nf.Fill(self.nbnf_all[0])
-    self.H_nsd_nf.Fill(self.nbnf_nsd[0]) 
-    self.H_etalim_nf.Fill(self.nbnf_etalim[0]) 
-    self.H_ptcut_nf.Fill(self.nbnf_ptcut[0]) 
-    self.H.Fill()
-    self.H_nf.Fill()
 
   def create_nbnf_hists(self):
     #self.nfnb_file = ROOT.TFile.Open('7000_4M_nfnb_all.root','recreate')
