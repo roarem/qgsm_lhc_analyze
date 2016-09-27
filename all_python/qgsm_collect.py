@@ -1,5 +1,5 @@
 from __future__ import print_function
-#import sys
+import sys
 import Histograms as hist
 import ROOT
 import numpy as np
@@ -39,41 +39,9 @@ class QGSM_Distributions:
                  ["etalim_nf","|\eta|<1"],["ptcut_nf","0.3<p_{T}<1.5"]]  
     H_nf_treename = ["H","nf"]
 
-    self.trees = [hist(H_all_treename,H_all_input,self.Nbins,start,stop),\
-                  hist(H_div_treename,H_div_input,self.Nbins,start,stop),\
-                  hist(H_nf_treename,H_nf_input,self.Nbins,start,stop)]    
-
-    #self.H_all       = ROOT.TH1F("all","ALL",self.Nbins,start,stop) 
-    #self.H_nsd       = ROOT.TH1F("nsd","ALL",self.Nbins,start,stop) 
-    #self.H_etalim    = ROOT.TH1F("|\eta|<1","ALL",self.Nbins,start,stop) 
-    #self.H_ptcut     = ROOT.TH1F("0.3<p_{T}<1.5","ALL",self.Nbins,start,stop) 
-    #self.H_all_div   = ROOT.TH1F("all_div","ALL",self.Nbins,start,stop) 
-    #self.H_nsd_div   = ROOT.TH1F("nsd_div","ALL",self.Nbins,start,stop) 
-    #self.H_etalim_div= ROOT.TH1F("|\eta|<1 div","ALL",self.Nbins,start,stop) 
-    #self.H_ptcut_div = ROOT.TH1F("0.3<p_{T}<1.5 div","ALL",self.Nbins,start,stop) 
-    #self.H_all_nf    = ROOT.TH1F("nf_all","ALL",self.Nbins,start,stop) 
-    #self.H_nsd_nf    = ROOT.TH1F("nf_nsd","ALL",self.Nbins,start,stop) 
-    #self.H_etalim_nf = ROOT.TH1F("nf_etalim","ALL",self.Nbins,start,stop) 
-    #self.H_ptcut_nf  = ROOT.TH1F("nf_ptcut","ALL",self.Nbins,start,stop) 
-
-
-    #self.H = ROOT.TTree("H","all")
-    #self.H.Branch("all",self.H_all)
-    #self.H.Branch("nsd",self.H_nsd)
-    #self.H.Branch("etalim",self.H_etalim)
-    #self.H.Branch("ptcut",self.H_ptcut)
-
-    #self.H_nf = ROOT.TTree("H_nf","nf")
-    #self.H_nf.Branch("all_nf",self.H_all_nf)
-    #self.H_nf.Branch("nsd_nf",self.H_nsd_nf)
-    #self.H_nf.Branch("etalim_nf",self.H_etalim_nf)
-    #self.H_nf.Branch("ptcut_nf",self.H_ptcut_nf)
-
-    #self.H_div = ROOT.TTree("H_div","div")
-    #self.H_div.Branch("all_div",self.H_all_div)
-    #self.H_div.Branch("nsd_div",self.H_nsd_div)
-    #self.H_div.Branch("etalim_div",self.H_etalim_div)
-    #self.H_div.Branch("ptcut_div",self.H_ptcut_div)
+    self.trees = [hist.Histograms(H_all_treename,H_all_input,self.Nbins,start,stop),\
+                  hist.Histograms(H_div_treename,H_div_input,self.Nbins,start,stop),\
+                  hist.Histograms(H_nf_treename,H_nf_input,self.Nbins,start,stop)]    
 
   def closeFile(self):
     self.finalpr.close()
@@ -83,6 +51,7 @@ class QGSM_Distributions:
     nbnf_nsd           = np.zeros(2)
     nbnf_etalim        = np.zeros(2)
     nbnf_ptcut         = np.zeros(2)
+    nfnb_countFlag             = 0
     bcorr_counted              = 0
     nbnf_all_counted           = 0
     nbnf_nsd_counted           = 0
@@ -93,14 +62,13 @@ class QGSM_Distributions:
     self.nbnf_etalim_linecount = 0
     self.nbnf_ptcut_linecount  = 0 
     self.bcorr_Nevents         = 0      
+    self.bcorr_Nevents_etalim  = 0 
+    self.bcorr_Nevents_ptcut   = 0 
     self.nbnf_all_Nevents      = 0 
     self.nbnf_nsd_Nevents      = 0 
     self.nbnf_etalim_Nevents   = 0
     self.nbnf_ptcut_Nevents    = 0 
-    self.nf_all                = 0
-    self.nf_nsd                = 0
-    self.nf_etalim             = 0
-    self.nf_ptcut              = 0
+    nf_max                   = [0,0,0,0]
 
     eventNr, nrParticles, finalpr, NPOM =\
         self.eventNr, self.nrParticles, self.finalpr, self.NPOM
@@ -158,53 +126,58 @@ class QGSM_Distributions:
 
             if bcorr:
               bcorr_countFlag = 1
+              bcorr_counted   = 1
               if np.abs(eta)<1 and pTransverse > 0.05:
+                bcorr_counted_etalim = 1
                 if pTransverse > 0.3 and pTransverse < 1.5:
-                  bcorr_counted = 1
-                  self.bcorr.append([event,eta])                  
+                  bcorr_counted_ptcut = 1
+                  self.bcorr.append(np.asarray([event,eta]))
                   self.bcorr_linecount += 1
                   
 
-            elif nbnf:
+            if nbnf:
               nbnf_index = self.eta_check(eta)
               nfnb_countFlag = 1
-              self.nbnf_all[nbnf_index] += 1
+              nbnf_all[nbnf_index] += 1
               nbnf_all_counted = 1
               self.nbnf_all_linecount += 1
 
               if idiag != 1 and idiag != 6 and idiag != 10:
                 nbnf_nsd_counted = 1
-                self.nbnf_nsd[nbnf_index] += 1
+                nbnf_nsd[nbnf_index] += 1
                 self.nbnf_nsd_linecount += 1
 
               if np.abs(eta) < 1:
                 nbnf_etalim_counted = 1
-                self.nbnf_etalim[nbnf_index] += 1
+                nbnf_etalim[nbnf_index] += 1
                 self.nbnf_etalim_linecount += 1
 
                 if np.abs(eta) > 0.2 and np.abs(eta) < 0.8:
                   if pTransverse > 0.3 and pTransverse < 1.5:
-                    self.nbnf_ptcut[nbnf_index] += 1
+                    nbnf_ptcut[nbnf_index] += 1
                     nbnf_ptcut_counted = 1
                     self.nbnf_ptcut_linecount += 1
 
-      
+          
       if nfnb_countFlag:
+        nfnb_countFlag = 0
         weighted = [True, True, False]
-        nbnf = np.asarray([nbnf_all,nbnf_nsd,nbnf_etalim,nbnf_ptcut])
+        nbnf_lists = np.asarray([nbnf_all,nbnf_nsd,nbnf_etalim,nbnf_ptcut])
         for i in range(len(self.trees)):
-            self.trees[i].fillHistograms(nbnf,weighted)
+            self.trees[i].fillHistograms(nbnf_lists,weighted[i])
+        nf_max[0]   = nbnf_all[0] if nf_max[0]<nbnf_all[0] else nf_max[0]
+        nf_max[1]   = nbnf_nsd[0] if nf_max[1]<nbnf_nsd[0] else nf_max[1]
+        nf_max[2]   = nbnf_etalim[0] if nf_max[2]<nbnf_etalim[0] else nf_max[2]
+        nf_max[3]   = nbnf_ptcut[0] if nf_max[3]<nbnf_ptcut[0] else nf_max[3]
 
-      self.nf_all            += self.nbnf_all[0]
-      self.nf_nsd            += self.nbnf_nsd[0]
-      self.nf_etalim         += self.nbnf_etalim[0]
-      self.nf_ptcut          += self.nbnf_ptcut[0]
-      nbnf_all           = np.zeros(2)
-      nbnf_nsd           = np.zeros(2)
-      nbnf_etalim        = np.zeros(2)
-      nbnf_ptcut         = np.zeros(2)
+        nbnf_all           = np.zeros(2)
+        nbnf_nsd           = np.zeros(2)
+        nbnf_etalim        = np.zeros(2)
+        nbnf_ptcut         = np.zeros(2)
 
       self.bcorr_Nevents        += bcorr_counted
+      self.bcorr_Nevents_etalim += bcorr_counted_etalim
+      self.bcorr_Nevents_ptcut  += bcorr_counted_ptcut
       self.nbnf_all_Nevents     += nbnf_all_counted
       self.nbnf_nsd_Nevents     += nbnf_nsd_counted
       self.nbnf_etalim_Nevents  += nbnf_etalim_counted
@@ -221,88 +194,30 @@ class QGSM_Distributions:
 
     print("")
     if nbnf:
-      self.H_all_div.Divide(self.H_all_nf)
-      self.H_nsd_div.Divide(self.H_nsd_nf)
-      self.H_etalim_div.Divide(self.H_etalim_nf)
-      self.H_ptcut_div.Divide(self.H_ptcut_nf)
-    
-      print("all: {}, nsd: {}, etalim: {}, ptcut: {}"\
-      .format(self.nbnf_all_Nevents,self.nbnf_nsd_Nevents,self.nbnf_etalim_Nevents,self.nbnf_ptcut_Nevents))
+      for i in range(len(self.trees[1].getHistograms())):
+        self.trees[1].getHistograms()[i].Divide(self.trees[2].getHistograms()[i])
 
+      for i in range(len(self.trees)):
+        self.trees[i].store_histograms(nf_max)
+      
+        #print("all: {}, nsd: {}, etalim: {}, ptcut: {}"\
+        #.format(self.nbnf_all_Nevents,self.nbnf_nsd_Nevents,self.nbnf_etalim_Nevents,self.nbnf_ptcut_Nevents))
+      self.nfnb_file.Write()
+      self.nfnb_file.Close()
+    self.bcorr = np.asarray(self.bcorr)
+    print(self.bcorr_linecount)
+    print(self.bcorr_Nevents,self.bcorr_Nevents_etalim,self.bcorr_Nevents_ptcut)
+    np.savetxt("bcorr_temp.out",self.bcorr,delimiter=',')
+     
   def create_nbnf_hists(self):
-    #self.nfnb_file = ROOT.TFile.Open('7000_4M_nfnb_all.root','recreate')
-    #c1 = ROOT.TCanvas( 'c1', '<n_{B}(n_{F})>', 200, 10, 700, 500 )
-
-    #self.H_all.Divide(self.H_all_nf)
-    #self.H_nsd.Divide(self.H_nsd_nf)
-    #self.H_etalim.Divide(self.H_etalim_nf)
-    #self.H_ptcut.Divide(self.H_ptcut_nf)
-
-    #self.H_all.SetMarkerStyle(20)
-    #self.H_all.SetMarkerColor(4)
-    #self.H_all.Draw("e1")
-
-    #self.H_nsd.SetMarkerStyle(21)
-    #self.H_nsd.SetMarkerColor(3)
-    #self.H_nsd.Draw("same e1")
-
-    #self.H_etalim.SetMarkerStyle(29)
-    #self.H_etalim.SetMarkerColor(5)
-    #self.H_etalim.Draw("same e1")
-
-    #self.H_ptcut.SetMarkerStyle(33)
-    #self.H_ptcut.SetMarkerColor(2)
-    #self.H_ptcut.Draw("same e1")
-
-    #leg = ROOT.TLegend(0.8,0.8,0.9,0.9)
-    #leg.SetFillColor(0)
-    #leg.AddEntry(self.H_all,"all","p")
-    #leg.AddEntry(self.H_nsd,"nsd","p")
-    #leg.AddEntry(self.H_etalim,"$|\eta|<1$","p")
-    #leg.AddEntry(self.H_ptcut,"|\eta|<1 & 0.3<p_{T}<1.5","p")
-    #leg.Draw()
-    #c1.Update()
-    
     self.nfnb_file.Write()
     self.nfnb_file.Close()
-    #raw_input()
 
-  def store_bin_data(self):
-    histograms = np.zeros((self.Nbins,16))
-    header = "nf_all,nf_nsd,nf_etalim,nf_ptcut,"+\
-             "H_all,H_nsd,H_etalim,H_ptcut,H_all_div,H_nsd_div,"+\
-             "H_etalim_div,H_ptcut_div,H_all_nf,H_nsd_nf,H_etalim_nf,H_ptcut_nf"
-    nf_all    = np.linspace(0,self.nf_all,self.Nbins)
-    nf_nsd    = np.linspace(0,self.nf_nsd,self.Nbins)
-    nf_etalim = np.linspace(0,self.nf_etalim,self.Nbins)
-    nf_ptcut  = np.linspace(0,self.nf_ptcut,self.Nbins)
-    for i in range(self.Nbins):
-      histograms[i,0] = nf_all[i]
-      histograms[i,1] = nf_nsd[i]
-      histograms[i,2] = nf_etalim[i]
-      histograms[i,3] = nf_ptcut[i]
-      histograms[i,4] = self.H_all.GetBinContent(i) 
-      histograms[i,5] = self.H_nsd.GetBinContent(i) 
-      histograms[i,6] = self.H_etalim.GetBinContent(i) 
-      histograms[i,7] = self.H_ptcut.GetBinContent(i) 
-
-      histograms[i,8] = self.H_all_div.GetBinContent(i) 
-      histograms[i,9] = self.H_nsd_div.GetBinContent(i) 
-      histograms[i,10] = self.H_etalim_div.GetBinContent(i) 
-      histograms[i,11] = self.H_ptcut_div.GetBinContent(i) 
-
-      histograms[i,12]  = self.H_all_nf.GetBinContent(i) 
-      histograms[i,13]  = self.H_nsd_nf.GetBinContent(i) 
-      histograms[i,14] = self.H_etalim_nf.GetBinContent(i) 
-      histograms[i,15] = self.H_ptcut_nf.GetBinContent(i) 
-
-    np.savetxt("all_histograms.out",histograms,delimiter=',',header=header)
-    
   def eta_check(self,eta):
     if eta > 0:
-        return 0
+      return 0
     else:
-        return 1
+      return 1
 
   def msg(self,text):
     text = "  "+text+chr(13)

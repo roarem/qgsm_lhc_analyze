@@ -1,18 +1,27 @@
 import qgsm_collect as collect
 import qgsm_FB_corr as fb_corr
+import numpy as np
 
-energy = 900
-O = collect.QGSM_Distributions(energy)
-O.collectData(bcorr=False,nbnf=True)
-O.store_bin_data()
-O.create_nbnf_hists()
+energy = 7000
+#O = collect.QGSM_Distributions(energy)
+#O.collectData(bcorr=True,nbnf=False)
+#O.store_bin_data()
+#O.create_nbnf_hists()
 #O.writeAnalysis()
 
-#FBs = fb_corr.FB(energy)
+bcorr = np.loadtxt("bcorr_temp.out",delimiter=',')
+####900 GeV
+##NeventsList = [785304, 634299, 599483]
+##linecount = 2948250
+####7000 GeV
+##NeventsList = [3016648, 2456139, 2369212]
+##linecount = 18251334
+FBs = fb_corr.FB(energy)
+##FBs.b_corr_count(NeventsList[2],bcorr,linecount)
 #FBs.b_corr_collect_file()
 #FBs.b_corr_collect_mem(O.bcorr_Nevents,O.bcorr,O.bcorr_linecount)
 #FBs.b_corr_count(O.bcorr_Nevents,O.bcorr,O.bcorr_linecount)
-#FBs.b_corr_plot(from_file=False)
+FBs.b_corr_plot(from_file='bcorr.py.out')
 
 #nB_nFs = fb_corr.FB(energy)
 #nB_nFs.nB_nF_collect_mem(O.nbnf_all_linecount,O.nbnf_nsd_linecount,O.nbnf_etalim_linecount,O.nbnf_ptcut_linecount,\
